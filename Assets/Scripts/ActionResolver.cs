@@ -26,7 +26,7 @@ public class ActionResolver : MonoBehaviour
 
     public MoveReturn MoveRequest(GridEntity unit, Vector3Int destinationCell)
     {
-        if (!walkabilityService.IsWalkable(destinationCell))
+        if (!walkabilityService.IsWalkable(destinationCell)|| walkabilityService.BlocksEdge(unit.CurrentCell, destinationCell))
             return new MoveReturn(MoveResult.Blocked, null);    // Zielzelle ist nicht begehbar
 
         GameObject objectAtTargetCell = gridState.GetAt(destinationCell);
