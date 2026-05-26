@@ -28,7 +28,7 @@ public class TurnManager : MonoBehaviour
             case turnOrder.PLAYER:
                 activeTurn = turnOrder.ENEMY;
                 //call EnemyManager to notify of TurnStart
-                enemyManager.startTurn();
+                enemyManager.ReadyEnemies();
                 break;
             
             case turnOrder.ENEMY:

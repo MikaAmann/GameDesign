@@ -14,7 +14,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float moveDuration;
     
     private bool  canMove = true;
-    private GridEntity entity;
+    public GridEntity entity;
     private Vector3Int? bufferedDirection = null;
     
     
@@ -70,8 +70,7 @@ public class PlayerController : MonoBehaviour
     }
 
     private void SnapToCell()
-    {
-        // TODO: Position Interpolieren
+    { 
         transform.position = tilemap.GetCellCenterWorld(entity.CurrentCell);
     }
 
@@ -99,7 +98,6 @@ public class PlayerController : MonoBehaviour
         // Input Buffer
         if (canMove && bufferedDirection.HasValue)
         {
-            Debug.Log("InputBuffering");
             Vector3Int dir = bufferedDirection.Value;
             bufferedDirection = null;
             Movement(dir);

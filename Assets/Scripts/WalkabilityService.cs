@@ -64,14 +64,53 @@ public class WalkabilityService : MonoBehaviour
 
         return true;
     }
-
+    
+    public bool IsWall(Vector3Int cell)
+    {
+        foreach (var map in blockingTilemaps)
+            if (map.HasTile(cell))
+                return true;
+        return false;   // kein blockierendes Tile -> begehbar ODER void, aber KEINE Mauer
+    }
+    
     // NEU: blockt eine Kante den Schritt from -> to?
     public bool BlocksEdge(Vector3Int from, Vector3Int to)
     {
-        WallSides side = SideOf(to - from);
-        if (side == WallSides.None) return false;          // kein orthogonaler 1-Schritt
-        return Has(from, side) || Has(to, Opposite(side)); // symmetrisch, beide Schreibweisen
+        int dx = to.x - from.x;
+        int dy = to.y - from.y;
+ 
+        // --- Orthogonaler Schritt (genau eine Achse) ---
+        if (dx == 0 || dy == 0)
+        {
+            WallSides side = SideOf(to - from);
+            if (side == WallSides.None) return false;          // kein 1-Schritt -> nichts blockt
+            return Has(from, side) || Has(to, Opposite(side)); // duenne Kante, symmetrisch
+        }
+ 
+        // --- Diagonaler Schritt (beide Achsen) ---
+        // Zwei orthogonale L-Umwege um die Ecke. Ein L-Pfad ist frei, wenn:
+        //   - KEINE Wall-Edge auf beiden Teilschritten liegt  UND
+        //   - das Eckfeld KEINE dicke Mauer ist (void ist erlaubt!)
+        Vector3Int horiz = from + new Vector3Int(dx, 0, 0);
+        Vector3Int vert  = from + new Vector3Int(0, dy, 0);
+ 
+        bool pathViaHoriz =
+            !BlocksEdge(from, horiz) &&   // 1. Teilschritt kanten-frei
+            !BlocksEdge(horiz, to)   &&   // 2. Teilschritt kanten-frei
+            !IsWall(horiz);               // Eckfeld keine dicke Mauer (void waere ok)
+ 
+        bool pathViaVert =
+            !BlocksEdge(from, vert)  &&
+            !BlocksEdge(vert, to)    &&
+            !IsWall(vert);
+ 
+        // LOCKER: diagonal blockiert, wenn KEINER der beiden L-Pfade frei ist.
+        return !(pathViaHoriz || pathViaVert);
     }
+
+
+
+
 
     private bool Has(Vector3Int cell, WallSides side)
         => _edges.TryGetValue(cell, out var s) && (s & side) != 0;
