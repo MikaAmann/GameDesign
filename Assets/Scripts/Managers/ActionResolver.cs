@@ -45,7 +45,10 @@ public class ActionResolver : MonoBehaviour
     public void Unregister(Vector3Int cell)
     {
         gridState.Unregister(cell);
-    } 
-    
-    public void ApplyDamage(GameObject target, int damageValue) { }
+    }
+
+    public void ApplyDamage(GameObject target, int damageValue)
+    {
+        Debug.Log("Dealt Damage");
+    }
 }

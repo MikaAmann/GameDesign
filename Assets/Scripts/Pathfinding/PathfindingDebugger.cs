@@ -223,7 +223,7 @@ public class PathfindingDebugger : MonoBehaviour
         foreach (var t in extraGoalMarkers)
             if (t != null) DrawCell(WorldToCell(t.position), 0.5f);
 
-        if (_lastResult.Found)
+        if (_lastResult.Found) 
         {
             Gizmos.color = Color.cyan;
             DrawPath(_lastResult.Path);

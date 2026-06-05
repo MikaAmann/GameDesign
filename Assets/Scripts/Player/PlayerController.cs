@@ -10,8 +10,18 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private ActionResolver actionResolver;
     [SerializeField] private GridState gridState;
     [SerializeField] private Tilemap tilemap;
-    
+
     [SerializeField] private float moveDuration;
+    
+    
+    
+    //Todo: SCriptableObject mit allen Relevanten Stats und mechanismen zum füllen der Variablen
+    //Todo: Logiken der Stats erweitern
+    [Header("Stats (Readonly)")] 
+    [SerializeField] private int maxHealth;
+    [SerializeField] private int currentHealth;
+    [SerializeField] private int maxActionPoints = 3;
+    private int currentActionPoints;
     
     private bool  canMove = true;
     public GridEntity entity;
@@ -25,12 +35,16 @@ public class PlayerController : MonoBehaviour
         entity.CurrentCell = tilemap.WorldToCell(transform.position);
         gridState.Register(entity.CurrentCell, gameObject);  // neu
         SnapToCell();
+        
+        currentActionPoints = maxActionPoints;
     }
 
     private void Update()
     {
         var kb = Keyboard.current;
         if (kb == null) return;
+        
+        //Todo: Irgendein Button druck zum abbruch (Enter?)
 
         // Richtung einlesen
         Vector3Int? input = null;
@@ -57,11 +71,12 @@ public class PlayerController : MonoBehaviour
         {
             case ActionResolver.MoveResult.Moved:
                 canMove = false;
-                StartCoroutine(MoveAndEndTurn());
+                StartCoroutine(MovePlayer());
                 break;
             case ActionResolver.MoveResult.Occupied:
                 // Damage-Logik
                 // TODO
+                //if enemy -> deductActionPoint()
                 break;
             case ActionResolver.MoveResult.Blocked:
                 // nichts tun
@@ -77,9 +92,10 @@ public class PlayerController : MonoBehaviour
     public void setActiveTurn()
     {
         canMove = true;
+        currentActionPoints = maxActionPoints;
     }
 
-    private IEnumerator MoveAndEndTurn()
+    private IEnumerator MovePlayer()
     {
         Vector3 start  = transform.position;
         Vector3 target = tilemap.GetCellCenterWorld(entity.CurrentCell);
@@ -93,7 +109,10 @@ public class PlayerController : MonoBehaviour
         }
 
         transform.position = target;
-        turnManager.nextTurn();
+        canMove = true;
+        deductActionPoints();
+        
+        //turnManager.nextTurn();
 
         // Input Buffer
         if (canMove && bufferedDirection.HasValue)
@@ -102,5 +121,21 @@ public class PlayerController : MonoBehaviour
             bufferedDirection = null;
             Movement(dir);
         }
+    }
+
+    private void deductActionPoints()
+    {
+        currentActionPoints--;
+        if (currentActionPoints == 0)
+        {
+            EndTurn();
+        }
+    }
+
+    private void EndTurn()
+    {
+        canMove = false;
+        bufferedDirection = null;
+        turnManager.nextTurn();
     }
 }
