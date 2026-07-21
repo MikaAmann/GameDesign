@@ -17,6 +17,8 @@ public abstract class Enemy : MonoBehaviour
     
     [SerializeField] private Tilemap tilemap;
     
+    [SerializeField] private UnitView view;
+    
     private enum PendingActionKind { None, Move, Attack }
     private PendingActionKind pendingKind;
     private Vector3Int pendingStep;
@@ -28,16 +30,16 @@ public abstract class Enemy : MonoBehaviour
     [SerializeField] private int health; 
     [SerializeField] private int damage; 
     
-    [Header("Animations parameter")] 
-    [SerializeField] private float moveDuration = .12f;
-    [SerializeField] private float attackSpeed = .07f;
-    [SerializeField] private float returnSpeed = .12f;
-    
     // Awake läuft vor Start — Referenzen hier holen
     void Awake()
     {
         entity = GetComponent<GridEntity>();
-        
+        view = GetComponent<UnitView>();
+        walkabilityService = Services.I.Walkability;
+        gridState          = Services.I.Grid;
+        actionResolver     = Services.I.Resolver;
+        tilemap            = Services.I.Tilemap;
+        playerController   = Services.I.PlayerController;
     }
     
     private void Start()
@@ -54,6 +56,14 @@ public abstract class Enemy : MonoBehaviour
         pendingKind = PendingActionKind.None;   // Reset zu Beginn jeder Runde
 
         Vector3Int playerCell = playerController.entity.CurrentCell;
+        
+        if (GetAttackCells(entity.CurrentCell).Contains(playerCell))
+        {
+            pendingKind = PendingActionKind.Attack;
+            pendingTarget = playerController.gameObject;
+            return;
+        }
+        
         List<Vector3Int> myNeighbours = GetNeighbours(entity.CurrentCell, playerCell);
 
         // Direkter Angriff hat Priorität: Spieler in Reichweite?
@@ -73,22 +83,30 @@ public abstract class Enemy : MonoBehaviour
         //PFad gedfunden
         if (result.Found && result.TryGetFirstStep(out Vector3Int step))
         {
-            actionResolver.MoveRequest(entity, step);   // committet GridState sofort
-            pendingKind = PendingActionKind.Move;
-            pendingStep = step;
+            TryCommitMove(step);
         }
         else //Kein Pfad gefunden: wir gehen so nah wie möglich ran
         {
             List<Vector3Int> fallback = Pathfinding.ClosestApproach(result, entity.CurrentCell, playerCell);
-            
+
             if (fallback.Count >= 2)
-            {
-                Vector3Int fallbackStep = fallback[1];
-                actionResolver.MoveRequest(entity, fallbackStep);
-                pendingKind = PendingActionKind.Move;
-                pendingStep = fallbackStep;
-            }
+                TryCommitMove(fallback[1]);
         }
+    }
+    
+    private bool TryCommitMove(Vector3Int step)
+    {
+        ActionResolver.MoveReturn result = actionResolver.MoveRequest(entity, step);
+
+        if (result.moveResult != ActionResolver.MoveResult.Moved)
+        {
+            pendingKind = PendingActionKind.None;
+            return false;
+        }
+
+        pendingKind = PendingActionKind.Move;
+        pendingStep = step;
+        return true;
     }
 
     public virtual IEnumerator PlayTurn()
@@ -97,12 +115,14 @@ public abstract class Enemy : MonoBehaviour
         {
             case PendingActionKind.Move:
                 // Hier nur visuell zur neuen Zelle gleiten.
-                yield return AnimateMove(pendingStep);
+                yield return view.MoveTo(pendingStep);
                 break;
 
             case PendingActionKind.Attack:
                 // Hop zum Spieler -> Aufprall -> Logik feuert -> Hop zurück.
-                yield return AnimateAttack(pendingTarget);
+                yield return view.AttackHop(
+                    playerController.entity.CurrentCell,
+                    () => actionResolver.ApplyDamage(pendingTarget, damage));
                 break;
 
             case PendingActionKind.None:
@@ -110,50 +130,7 @@ public abstract class Enemy : MonoBehaviour
                 yield break;
         }
     }
-
-    private IEnumerator AnimateMove(Vector3Int step)
-    {
-        Vector3 start  = transform.position;
-        Vector3 target = tilemap.GetCellCenterWorld(step) /* Weltkoordinate von step, z.B. tilemap.GetCellCenterWorld(step) */;
-        float elapsed  = 0f;
-
-        while (elapsed < moveDuration)
-        {
-            elapsed += Time.deltaTime;
-            transform.position = Vector3.Lerp(start, target, elapsed / moveDuration);
-            yield return null;
-        }
-        transform.position = target;
-    }
-
-    private IEnumerator AnimateAttack(GameObject target)
-    {
-        Vector3 home       = transform.position;
-        Vector3 impactPos  = tilemap.GetCellCenterWorld(playerController.entity.CurrentCell) /* Weltkoordinate des Spielerfelds */;
-
-        // Hin
-        yield return Hop(home, impactPos, attackSpeed);
-        
-        actionResolver.ApplyDamage(target, damage);
-        // (ApplyDamage -> HP runter -> HealthComponent.OnDamaged -> UI/FX/Sound/Screenshake)
-
-        // Zurück
-        yield return Hop(impactPos, home, returnSpeed);
-    }
-
-    private IEnumerator Hop(Vector3 from, Vector3 to, float duration)
-    {
-        float elapsed = 0f;
-        while (elapsed < duration)
-        {
-            elapsed += Time.deltaTime;
-            transform.position = Vector3.Lerp(from, to, elapsed / duration);
-            yield return null;
-        }
-        transform.position = to;
-    }
-
-
+    
     // Liefert die gültigen Nachbarfelder.
     protected virtual List<Vector3Int> GetNeighbours(
         Vector3Int cell, 
@@ -188,6 +165,13 @@ public abstract class Enemy : MonoBehaviour
             }
         }
         return neighbours;
+    }
+    
+    // Welche Felder kann ich angreifen? Standard: identisch zur Bewegung.
+    // Subklassen ueberschreiben das, wenn sie anders treffen als sie ziehen.
+    protected virtual List<Vector3Int> GetAttackCells(Vector3Int from)
+    {
+        return GetNeighbours(from);
     }
     
     

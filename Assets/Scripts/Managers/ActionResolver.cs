@@ -42,7 +42,7 @@ public class ActionResolver : MonoBehaviour
         }
     }
 
-    public void Unregister(Vector3Int cell)
+    private void Unregister(Vector3Int cell)
     {
         gridState.Unregister(cell);
     }

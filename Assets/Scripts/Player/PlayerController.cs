@@ -10,6 +10,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private ActionResolver actionResolver;
     [SerializeField] private GridState gridState;
     [SerializeField] private Tilemap tilemap;
+    [SerializeField] private UnitView view; 
 
     [SerializeField] private float moveDuration;
     
@@ -23,18 +24,29 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private int maxActionPoints = 3;
     private int currentActionPoints;
     
-    private bool  canMove = true;
+    private bool isMyTurn = true;    // Zug-Gate: darf ich ueberhaupt handeln?
+    private bool isAnimating;        // Animationslock: laeuft gerade eine Coroutine?
+    
     public GridEntity entity;
     private Vector3Int? bufferedDirection = null;
-    
-    
-    void Awake() { entity = GetComponent<GridEntity>(); }
+
+
+    void Awake()
+    {
+        entity = GetComponent<GridEntity>();
+        view = GetComponent<UnitView>();
+        
+        //walkabilityService = Services.I.Walkability;
+        gridState          = Services.I.Grid;
+        actionResolver     = Services.I.Resolver;
+        tilemap            = Services.I.Tilemap;
+    }
     
     private void Start()
     {
         entity.CurrentCell = tilemap.WorldToCell(transform.position);
         gridState.Register(entity.CurrentCell, gameObject);  // neu
-        SnapToCell();
+        view.SnapToCell(entity.CurrentCell);
         
         currentActionPoints = maxActionPoints;
     }
@@ -44,7 +56,11 @@ public class PlayerController : MonoBehaviour
         var kb = Keyboard.current;
         if (kb == null) return;
         
-        //Todo: Irgendein Button druck zum abbruch (Enter?)
+        if (isMyTurn && !isAnimating && kb.enterKey.wasPressedThisFrame)
+        {
+            EndTurn();
+            return;
+        }
 
         // Richtung einlesen
         Vector3Int? input = null;
@@ -55,10 +71,15 @@ public class PlayerController : MonoBehaviour
 
         if (input == null) return;
 
-        if (canMove)
-            Movement(input.Value);
-        else
-            bufferedDirection = input;   // merken statt verwerfen
+        if (!isMyTurn) return;                  // Fremder Zug: Eingabe verwerfen, NICHT puffern
+
+        if (isAnimating)
+        {
+            bufferedDirection = input;          // Puffern nur waehrend der eigenen Animation
+            return;
+        }
+
+        Movement(input.Value);
     }
 
     private void Movement(Vector3Int direction)
@@ -70,7 +91,7 @@ public class PlayerController : MonoBehaviour
         switch (result.moveResult)
         {
             case ActionResolver.MoveResult.Moved:
-                canMove = false;
+                isAnimating = true;
                 StartCoroutine(MovePlayer());
                 break;
             case ActionResolver.MoveResult.Occupied:
@@ -83,39 +104,23 @@ public class PlayerController : MonoBehaviour
                 break;
         }
     }
-
-    private void SnapToCell()
-    { 
-        transform.position = tilemap.GetCellCenterWorld(entity.CurrentCell);
-    }
-
+    
     public void setActiveTurn()
     {
-        canMove = true;
+        isMyTurn = true;
+        isAnimating = false;
+        bufferedDirection = null;       // alter Input aus dem Gegnerzug wird nicht nachgeholt
         currentActionPoints = maxActionPoints;
     }
 
     private IEnumerator MovePlayer()
     {
-        Vector3 start  = transform.position;
-        Vector3 target = tilemap.GetCellCenterWorld(entity.CurrentCell);
-        float elapsed  = 0f;
+        yield return view.MoveTo(entity.CurrentCell);
 
-        while (elapsed < moveDuration)
-        {
-            elapsed += Time.deltaTime;
-            transform.position = Vector3.Lerp(start, target, elapsed / moveDuration);
-            yield return null;
-        }
-
-        transform.position = target;
-        canMove = true;
+        isAnimating = false;
         deductActionPoints();
-        
-        //turnManager.nextTurn();
 
-        // Input Buffer
-        if (canMove && bufferedDirection.HasValue)
+        if (isMyTurn && bufferedDirection.HasValue)
         {
             Vector3Int dir = bufferedDirection.Value;
             bufferedDirection = null;
@@ -126,15 +131,13 @@ public class PlayerController : MonoBehaviour
     private void deductActionPoints()
     {
         currentActionPoints--;
-        if (currentActionPoints == 0)
-        {
+        if (currentActionPoints <= 0)
             EndTurn();
-        }
     }
 
     private void EndTurn()
     {
-        canMove = false;
+        isMyTurn = false;
         bufferedDirection = null;
         turnManager.nextTurn();
     }

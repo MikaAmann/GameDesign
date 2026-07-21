@@ -27,8 +27,9 @@ public class EnemyManager : MonoBehaviour
 
     private IEnumerator RunEnemyTurn()
     {
-        foreach (var enemy in enemyList)
+        foreach (var enemy in new List<Enemy>(enemyList))
         {
+            if (enemy == null) continue; 
             // Ferne Gegner überspringen: kein Rechnen, keine Animation
             if (SqrDistanceToPlayer(enemy) >= attentionRadius * attentionRadius)
                 continue;
@@ -49,6 +50,5 @@ public class EnemyManager : MonoBehaviour
     public void Unregister(Enemy enemy)
     {
         enemyList.Remove(enemy);
-        actionResolver.Unregister(enemy.entity.CurrentCell);
     }
 }
