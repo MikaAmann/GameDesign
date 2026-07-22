@@ -40,18 +40,7 @@ public class PlayerController : MonoBehaviour
         gameManager        = Services.I.Game;
         
         stats.OnDied += HandleDeath;
-    }
-    
-    private void HandleDeath()
-    {
-        isMyTurn = false;
-        bufferedDirection = null;
-        gameManager.ReportPlayerDeath();
-    }
-
-    private void OnDestroy()
-    {
-        if (stats != null) stats.OnDied -= HandleDeath;
+        stats.OnHealthChanged += RefreshHealthUI;
     }
     
     private void Start()
@@ -62,7 +51,26 @@ public class PlayerController : MonoBehaviour
         
         currentActionPoints = maxActionPoints;
         RefreshActionPointUI();
+        RefreshHealthUI(stats.CurrentHealth, stats.MaxHealth);
     }
+    
+    private void HandleDeath()
+    {
+        isMyTurn = false;
+        bufferedDirection = null;
+        gameManager.ReportPlayerDeath();
+    }
+    
+    private void RefreshHealthUI(int current, int max)
+        => Services.I.UI.SetHealth(current, max);
+
+    private void OnDestroy()
+    {
+        if (stats == null) return;
+        stats.OnDied -= HandleDeath;
+        stats.OnHealthChanged -= RefreshHealthUI;
+    }
+    
 
     private void Update()
     {
