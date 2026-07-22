@@ -9,9 +9,11 @@ public class EnemyManager : MonoBehaviour
     [SerializeField] private float attentionRadius = 20f;
     [SerializeField] private ActionResolver actionResolver;
     private List<Enemy> enemyList;
+    private GameManager gameManager;
 
     void Start()
     {
+        gameManager = Services.I.Game;
         // Einmalig alle Gegner holen und die Enemy-Komponente rausziehen
         GameObject[] found = GameObject.FindGameObjectsWithTag("Enemy");
         enemyList = new List<Enemy>(found.Length);
@@ -29,7 +31,8 @@ public class EnemyManager : MonoBehaviour
     {
         foreach (var enemy in new List<Enemy>(enemyList))
         {
-            if (enemy == null) continue; 
+            if (enemy == null) continue;
+            if (gameManager.IsGameOver) yield break;
             // Ferne Gegner überspringen: kein Rechnen, keine Animation
             if (SqrDistanceToPlayer(enemy) >= attentionRadius * attentionRadius)
                 continue;
@@ -47,8 +50,9 @@ public class EnemyManager : MonoBehaviour
         return diff.sqrMagnitude;
     }
 
-    public void Unregister(Enemy enemy)
+    public void Unregister(Enemy enemy, UnitStats deadStats)
     {
         enemyList.Remove(enemy);
+        gameManager.ReportEnemyDeath(deadStats, enemyList.Count);
     }
 }

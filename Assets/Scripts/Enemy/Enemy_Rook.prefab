@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 6683515092131745657}
   - component: {fileID: 1475595455367198721}
   - component: {fileID: 4525993417119053372}
+  - component: {fileID: 7837795223900106358}
   m_Layer: 0
   m_Name: Enemy_Rook
   m_TagString: Enemy
@@ -55,8 +56,7 @@ MonoBehaviour:
   actionResolver: {fileID: 0}
   tilemap: {fileID: 0}
   view: {fileID: 4525993417119053372}
-  health: 0
-  damage: 0
+  stats: {fileID: 7837795223900106358}
 --- !u!114 &6683515092131745657
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -144,3 +144,20 @@ MonoBehaviour:
   moveDuration: 0.12
   attackSpeed: 0.07
   returnSpeed: 0.12
+--- !u!114 &7837795223900106358
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2227517357452527340}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 26f089f98954ef84189b75f2248babfc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UnitStats
+  config: {fileID: 11400000, guid: d0188d7d3e703be44a3356e6b1628115, type: 2}
+  tier: {fileID: 11400000, guid: 83b7f3f439918074abdd5ae2a37dca5a, type: 2}
+  maxHealth: 0
+  currentHealth: 0
+  damage: 0

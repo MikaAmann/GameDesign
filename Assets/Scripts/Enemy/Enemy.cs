@@ -14,32 +14,47 @@ public abstract class Enemy : MonoBehaviour
     [SerializeField] private GridState gridState; 
     [SerializeField] private PlayerController playerController;
     [SerializeField] private ActionResolver actionResolver;
+    private EnemyManager enemyManager;
     
     [SerializeField] private Tilemap tilemap;
     
     [SerializeField] private UnitView view;
+    [SerializeField] private UnitStats stats;
     
     private enum PendingActionKind { None, Move, Attack }
     private PendingActionKind pendingKind;
     private Vector3Int pendingStep;
     private GameObject pendingTarget;
-
-    //Todo: SCriptableObject mit allen Relevanten Stats und mechanismen zum füllen der Variablen
-    //Todo: Logiken der Stats erweitern
-    [Header("Stats (Readonly)")] 
-    [SerializeField] private int health; 
-    [SerializeField] private int damage; 
     
     // Awake läuft vor Start — Referenzen hier holen
     void Awake()
     {
         entity = GetComponent<GridEntity>();
         view = GetComponent<UnitView>();
+        stats =  GetComponent<UnitStats>();
+        
         walkabilityService = Services.I.Walkability;
         gridState          = Services.I.Grid;
         actionResolver     = Services.I.Resolver;
         tilemap            = Services.I.Tilemap;
         playerController   = Services.I.PlayerController;
+        enemyManager       = Services.I.Enemies;
+        
+        stats.OnDied += HandleDeath;
+        
+        if (stats.Tier != null)
+            view.ApplyTint(stats.Tier.Tint);
+    }
+    
+    private void HandleDeath()                 // 2. was passieren soll
+    {
+        enemyManager.Unregister(this, stats);
+        Destroy(gameObject);
+    }
+
+    private void OnDestroy()
+    {
+        if (stats != null) stats.OnDied -= HandleDeath;   // 3. abmelden
     }
     
     private void Start()
@@ -122,7 +137,7 @@ public abstract class Enemy : MonoBehaviour
                 // Hop zum Spieler -> Aufprall -> Logik feuert -> Hop zurück.
                 yield return view.AttackHop(
                     playerController.entity.CurrentCell,
-                    () => actionResolver.ApplyDamage(pendingTarget, damage));
+                    () => actionResolver.ApplyDamage(pendingTarget, stats.Damage));
                 break;
 
             case PendingActionKind.None:
@@ -172,12 +187,6 @@ public abstract class Enemy : MonoBehaviour
     protected virtual List<Vector3Int> GetAttackCells(Vector3Int from)
     {
         return GetNeighbours(from);
-    }
-    
-    
-    private void onDeath()
-    {
-        //Todo: noch offen
     }
     
     private void SnapToCell()

@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 6790521154193069552}
   - component: {fileID: 3371704259863670009}
   - component: {fileID: -5121180987412224672}
+  - component: {fileID: 8511475672983708808}
   m_Layer: 0
   m_Name: Enemy_Knight
   m_TagString: Enemy
@@ -55,8 +56,7 @@ MonoBehaviour:
   actionResolver: {fileID: 0}
   tilemap: {fileID: 0}
   view: {fileID: -5121180987412224672}
-  health: 0
-  damage: 0
+  stats: {fileID: 8511475672983708808}
 --- !u!114 &6790521154193069552
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -144,3 +144,20 @@ MonoBehaviour:
   moveDuration: 0.12
   attackSpeed: 0.07
   returnSpeed: 0.12
+--- !u!114 &8511475672983708808
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3667606442454205773}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 26f089f98954ef84189b75f2248babfc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UnitStats
+  config: {fileID: 11400000, guid: 2534a6f19ebbc9041ac2f04cbfa241cb, type: 2}
+  tier: {fileID: 11400000, guid: b83ff06971f615842b7c117a90dc11f7, type: 2}
+  maxHealth: 0
+  currentHealth: 0
+  damage: 0

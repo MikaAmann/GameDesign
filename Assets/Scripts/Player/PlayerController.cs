@@ -10,17 +10,13 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private ActionResolver actionResolver;
     [SerializeField] private GridState gridState;
     [SerializeField] private Tilemap tilemap;
-    [SerializeField] private UnitView view; 
+    [SerializeField] private UnitView view;
 
-    [SerializeField] private float moveDuration;
+    private UnitStats stats;
+    private GameManager gameManager;
+    //[SerializeField] private float moveDuration;
     
     
-    
-    //Todo: SCriptableObject mit allen Relevanten Stats und mechanismen zum füllen der Variablen
-    //Todo: Logiken der Stats erweitern
-    [Header("Stats (Readonly)")] 
-    [SerializeField] private int maxHealth;
-    [SerializeField] private int currentHealth;
     [SerializeField] private int maxActionPoints = 3;
     private int currentActionPoints;
     
@@ -35,11 +31,27 @@ public class PlayerController : MonoBehaviour
     {
         entity = GetComponent<GridEntity>();
         view = GetComponent<UnitView>();
+        stats =  GetComponent<UnitStats>();
         
         //walkabilityService = Services.I.Walkability;
         gridState          = Services.I.Grid;
         actionResolver     = Services.I.Resolver;
         tilemap            = Services.I.Tilemap;
+        gameManager        = Services.I.Game;
+        
+        stats.OnDied += HandleDeath;
+    }
+    
+    private void HandleDeath()
+    {
+        isMyTurn = false;
+        bufferedDirection = null;
+        gameManager.ReportPlayerDeath();
+    }
+
+    private void OnDestroy()
+    {
+        if (stats != null) stats.OnDied -= HandleDeath;
     }
     
     private void Start()
@@ -49,6 +61,7 @@ public class PlayerController : MonoBehaviour
         view.SnapToCell(entity.CurrentCell);
         
         currentActionPoints = maxActionPoints;
+        RefreshActionPointUI();
     }
 
     private void Update()
@@ -95,14 +108,38 @@ public class PlayerController : MonoBehaviour
                 StartCoroutine(MovePlayer());
                 break;
             case ActionResolver.MoveResult.Occupied:
-                // Damage-Logik
-                // TODO
-                //if enemy -> deductActionPoint()
+                // Nur angreifbar, wenn dort etwas mit Kampfwerten steht (Truhen haben keine)
+                if (result.targetObject != null && result.targetObject.TryGetComponent(out UnitStats _))
+                {
+                    isAnimating = true;
+                    StartCoroutine(AttackRoutine(targetCell, result.targetObject));
+                }
                 break;
             case ActionResolver.MoveResult.Blocked:
                 // nichts tun
                 break;
         }
+    }
+    
+    private IEnumerator AttackRoutine(Vector3Int targetCell, GameObject target)
+    {
+        yield return view.AttackHop(
+            targetCell,
+            () => actionResolver.ApplyDamage(target, stats.Damage));
+
+        isAnimating = false;
+        deductActionPoints();
+
+        ConsumeBufferedInput();
+    }
+    
+    private void ConsumeBufferedInput()
+    {
+        if (!isMyTurn || !bufferedDirection.HasValue) return;
+
+        Vector3Int dir = bufferedDirection.Value;
+        bufferedDirection = null;
+        Movement(dir);
     }
     
     public void setActiveTurn()
@@ -111,6 +148,7 @@ public class PlayerController : MonoBehaviour
         isAnimating = false;
         bufferedDirection = null;       // alter Input aus dem Gegnerzug wird nicht nachgeholt
         currentActionPoints = maxActionPoints;
+        RefreshActionPointUI();
     }
 
     private IEnumerator MovePlayer()
@@ -120,20 +158,19 @@ public class PlayerController : MonoBehaviour
         isAnimating = false;
         deductActionPoints();
 
-        if (isMyTurn && bufferedDirection.HasValue)
-        {
-            Vector3Int dir = bufferedDirection.Value;
-            bufferedDirection = null;
-            Movement(dir);
-        }
+        ConsumeBufferedInput();
     }
 
     private void deductActionPoints()
     {
         currentActionPoints--;
+        RefreshActionPointUI();
         if (currentActionPoints <= 0)
             EndTurn();
     }
+    
+    private void RefreshActionPointUI()
+        => Services.I.UI.SetActionPoints(currentActionPoints, maxActionPoints);
 
     private void EndTurn()
     {

@@ -26,8 +26,14 @@ public class Services : MonoBehaviour
     [SerializeField] private ActionResolver resolver;
     [SerializeField] private Tilemap tilemap;
     [SerializeField] private PlayerController playerController;
+    [SerializeField] private EnemyManager enemyManager;
+    [SerializeField] private GameManager gameManager;
+    [SerializeField] private GameUI ui;
     
-
+    public EnemyManager Enemies => enemyManager;
+    
+    public GameManager Game => gameManager;
+    
     public GridState Grid => gridState;
     public WalkabilityService Walkability => walkability;
     public ActionResolver Resolver => resolver;
@@ -35,5 +41,12 @@ public class Services : MonoBehaviour
 
     public PlayerController PlayerController => playerController;
     
+    public GameUI UI => ui;
+    
     private void Awake() => instance = this;
+    
+    private void OnDestroy()
+    {
+        if (instance == this) instance = null;
+    }
 }

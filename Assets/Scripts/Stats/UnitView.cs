@@ -59,4 +59,10 @@ public class UnitView : MonoBehaviour
         }
         transform.position = to;
     }
+    
+    public void ApplyTint(Color color)
+    {
+        var renderer = GetComponent<SpriteRenderer>();
+        if (renderer != null) renderer.color = color;
+    }
 }

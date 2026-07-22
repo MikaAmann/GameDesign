@@ -49,6 +49,20 @@ public class ActionResolver : MonoBehaviour
 
     public void ApplyDamage(GameObject target, int damageValue)
     {
-        Debug.Log("Dealt Damage");
+        if (target == null) return;
+        if (!target.TryGetComponent(out UnitStats stats)) return;
+        if (stats.IsDead) return;
+
+        // Zelle VOR dem Schaden merken: OnDied kann Destroy ausloesen
+        GridEntity targetEntity = target.GetComponent<GridEntity>();
+        Vector3Int? cell = targetEntity != null ? targetEntity.CurrentCell : (Vector3Int?)null;
+
+        stats.TakeDamage(damageValue);
+
+        if (!stats.IsDead) return;
+
+        // Zelle nur freigeben, wenn dort wirklich noch dieses Objekt steht
+        if (cell.HasValue && gridState.GetAt(cell.Value) == target)
+            gridState.Unregister(cell.Value);
     }
 }
