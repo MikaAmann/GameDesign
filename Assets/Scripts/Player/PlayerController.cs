@@ -25,13 +25,15 @@ public class PlayerController : MonoBehaviour
     
     public GridEntity entity;
     private Vector3Int? bufferedDirection = null;
-
+    private PlayerLeveling leveling;
+    
 
     void Awake()
     {
         entity = GetComponent<GridEntity>();
         view = GetComponent<UnitView>();
         stats =  GetComponent<UnitStats>();
+        leveling = GetComponent<PlayerLeveling>();
         
         //walkabilityService = Services.I.Walkability;
         gridState          = Services.I.Grid;
@@ -39,8 +41,10 @@ public class PlayerController : MonoBehaviour
         tilemap            = Services.I.Tilemap;
         gameManager        = Services.I.Game;
         
+        
         stats.OnDied += HandleDeath;
         stats.OnHealthChanged += RefreshHealthUI;
+        leveling.OnLevelChanged += RefreshLevelUI;
     }
     
     private void Start()
@@ -63,12 +67,19 @@ public class PlayerController : MonoBehaviour
     
     private void RefreshHealthUI(int current, int max)
         => Services.I.UI.SetHealth(current, max);
+    
+    private void RefreshLevelUI(int currentXp, int maxXp, int level)
+        => Services.I.UI.SetLevel(currentXp, maxXp, level);
 
     private void OnDestroy()
     {
-        if (stats == null) return;
-        stats.OnDied -= HandleDeath;
-        stats.OnHealthChanged -= RefreshHealthUI;
+        if (stats != null)
+        {
+            stats.OnDied -= HandleDeath;
+            stats.OnHealthChanged -= RefreshHealthUI;
+        }
+        if (leveling != null)
+            leveling.OnLevelChanged -= RefreshLevelUI;
     }
     
 
@@ -90,6 +101,11 @@ public class PlayerController : MonoBehaviour
         if (kb.aKey.wasPressedThisFrame) input = Vector3Int.left;
         if (kb.dKey.wasPressedThisFrame) input = Vector3Int.right;
 
+        //Cheats for leveldebug
+        if (kb.cKey.wasPressedThisFrame) GetComponent<PlayerLeveling>().GainXp(1);
+        if (kb.vKey.wasPressedThisFrame) GetComponent<PlayerLeveling>().GainXp(2);
+        if (kb.bKey.wasPressedThisFrame) GetComponent<PlayerLeveling>().GainXp(3);
+        
         if (input == null) return;
 
         if (!isMyTurn) return;                  // Fremder Zug: Eingabe verwerfen, NICHT puffern
@@ -185,5 +201,10 @@ public class PlayerController : MonoBehaviour
         isMyTurn = false;
         bufferedDirection = null;
         turnManager.nextTurn();
+    }
+    
+    public void IncreaseMaxActionPoints(int amount){
+        maxActionPoints += amount;
+        RefreshActionPointUI();
     }
 }

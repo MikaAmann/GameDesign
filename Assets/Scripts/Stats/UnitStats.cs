@@ -11,12 +11,14 @@ public class UnitStats : MonoBehaviour
     [SerializeField] private int maxHealth;
     [SerializeField] private int currentHealth;
     [SerializeField] private int damage;
+    [SerializeField] private int xpReward;
 
     public int MaxHealth     => maxHealth;
     public int CurrentHealth => currentHealth;
     public int Damage        => damage;
     public bool IsDead       => currentHealth <= 0;
     public SO_Tier Tier      => tier;
+    public int XpReward      => xpReward;
     
     public bool IsVictoryTarget => config.IsVictoryTarget;
 
@@ -35,6 +37,9 @@ public class UnitStats : MonoBehaviour
         damage    = Mathf.Max(1, Mathf.RoundToInt(config.Damage * dmgMul));
 
         currentHealth = maxHealth;
+        
+        float xpMul = tier != null ? tier.XpMultiplier : 1f;
+        xpReward = Mathf.Max(1, Mathf.RoundToInt(config.XpReward * xpMul));
     }
 
     public void TakeDamage(int amount)
@@ -58,6 +63,12 @@ public class UnitStats : MonoBehaviour
         maxHealth = Mathf.Max(1, maxHealth + delta);
         if (healUp) currentHealth = Mathf.Min(currentHealth + Mathf.Max(0, delta), maxHealth);
         NotifyHealthChanged();
+    }
+
+    public void HealFull()
+    {
+        currentHealth = maxHealth;
+        OnHealthChanged?.Invoke(currentHealth, maxHealth);
     }
 
     public void RaiseDamage(int delta)

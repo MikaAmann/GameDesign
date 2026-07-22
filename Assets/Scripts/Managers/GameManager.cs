@@ -20,6 +20,10 @@ public class GameManager : MonoBehaviour
     public void ReportEnemyDeath(UnitStats deadStats, int remainingEnemies)
     {
         if (isGameOver) return;
+        
+        if(deadStats != null) Services.I.PlayerController
+            .GetComponent<PlayerLeveling>()
+            .GainXp(deadStats.XpReward);
 
         switch (victoryCondition)
         {

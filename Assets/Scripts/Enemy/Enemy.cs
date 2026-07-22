@@ -69,20 +69,19 @@ public abstract class Enemy : MonoBehaviour
     public virtual void DecideTurn()
     {
         pendingKind = PendingActionKind.None;   // Reset zu Beginn jeder Runde
-
         Vector3Int playerCell = playerController.entity.CurrentCell;
         
-        if (GetAttackCells(entity.CurrentCell).Contains(playerCell))
+        List<Vector3Int> myNeighbours = GetNeighbours(entity.CurrentCell, playerCell);
+
+        // Direkter Angriff hat Priorität: Spieler in Reichweite?
+        if (myNeighbours.Contains(playerCell))
         {
             pendingKind = PendingActionKind.Attack;
             pendingTarget = playerController.gameObject;
             return;
         }
         
-        List<Vector3Int> myNeighbours = GetNeighbours(entity.CurrentCell, playerCell);
-
-        // Direkter Angriff hat Priorität: Spieler in Reichweite?
-        if (myNeighbours.Contains(playerCell))
+        if (GetExtraAttackCells(entity.CurrentCell).Contains(playerCell))
         {
             pendingKind = PendingActionKind.Attack;
             pendingTarget = playerController.gameObject;
@@ -182,11 +181,13 @@ public abstract class Enemy : MonoBehaviour
         return neighbours;
     }
     
-    // Welche Felder kann ich angreifen? Standard: identisch zur Bewegung.
-    // Subklassen ueberschreiben das, wenn sie anders treffen als sie ziehen.
-    protected virtual List<Vector3Int> GetAttackCells(Vector3Int from)
+    // Zusaetzliche Angriffsfelder ueber die Bewegung hinaus.
+    // Basis: keine, der Gegner trifft genau dort, wohin er ziehen kann.
+    // Subklassen liefern hier ihre Sonderfelder (Champion-Splash,
+    // spaeter Bauer-Diagonale als Faehigkeit).
+    protected virtual List<Vector3Int> GetExtraAttackCells(Vector3Int from)
     {
-        return GetNeighbours(from);
+        return new List<Vector3Int>();
     }
     
     private void SnapToCell()
