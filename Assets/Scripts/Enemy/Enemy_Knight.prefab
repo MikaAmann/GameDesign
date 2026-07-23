@@ -117,7 +117,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 6
+  m_SortingOrder: 3
   m_MaskInteraction: 0
   m_Sprite: {fileID: -3187116828349431946, guid: 978c26162ac11074c9db00dce8376952, type: 3}
   m_Color: {r: 1, g: 0, b: 0, a: 1}
@@ -161,3 +161,4 @@ MonoBehaviour:
   maxHealth: 0
   currentHealth: 0
   damage: 0
+  xpReward: 0

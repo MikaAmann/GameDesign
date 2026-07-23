@@ -132,17 +132,43 @@ public class PlayerController : MonoBehaviour
                 StartCoroutine(MovePlayer());
                 break;
             case ActionResolver.MoveResult.Occupied:
-                // Nur angreifbar, wenn dort etwas mit Kampfwerten steht (Truhen haben keine)
-                if (result.targetObject != null && result.targetObject.TryGetComponent(out UnitStats _))
+                if (result.targetObject == null) break;
+
+                if (result.targetObject.TryGetComponent(out UnitStats _))
                 {
                     isAnimating = true;
                     StartCoroutine(AttackRoutine(targetCell, result.targetObject));
+                }
+                else if (result.targetObject.TryGetComponent(out Chest chest))
+                {
+                    isAnimating = true;
+                    StartCoroutine(OpenChestRoutine(targetCell, chest));
                 }
                 break;
             case ActionResolver.MoveResult.Blocked:
                 // nichts tun
                 break;
         }
+    }
+    private IEnumerator OpenChestRoutine(Vector3Int targetCell, Chest chest)
+    {
+        RewardPanel panel = Services.I.UI.Reward;
+        panel.Show();
+        yield return new WaitUntil(() => panel.HasChoice);
+        panel.Hide();
+
+        chest.Open(panel.Choice);
+        bufferedDirection = null;   // Tasten waehrend der Wahl nicht nachholen
+        
+        actionResolver.ReleaseCell(targetCell, chest.gameObject);
+
+        // Zelle ist jetzt frei: regulaer anfragen, damit der Resolver committet
+        ActionResolver.MoveReturn result = actionResolver.MoveRequest(entity, targetCell);
+        if (result.moveResult == ActionResolver.MoveResult.Moved)
+            yield return view.MoveTo(entity.CurrentCell);
+
+        isAnimating = false;
+        deductActionPoints();
     }
     
     private IEnumerator AttackRoutine(Vector3Int targetCell, GameObject target)

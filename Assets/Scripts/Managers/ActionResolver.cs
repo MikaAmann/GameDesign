@@ -42,9 +42,10 @@ public class ActionResolver : MonoBehaviour
         }
     }
 
-    private void Unregister(Vector3Int cell)
+    public void ReleaseCell(Vector3Int cell, GameObject expectedOccupant)
     {
-        gridState.Unregister(cell);
+        if (gridState.GetAt(cell) == expectedOccupant)
+            gridState.Unregister(cell);
     }
 
     public void ApplyDamage(GameObject target, int damageValue)
