@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Tier_Champion
   m_EditorClassIdentifier: Assembly-CSharp::SO_Tier
   displayName: Champion
-  healthMultiplier: 2
-  damageMultiplier: 2
-  xpMultiplier: 2
+  healthMultiplier: 5
+  damageMultiplier: 5
+  xpMultiplier: 5
   tint: {r: 1, g: 0, b: 0, a: 1}

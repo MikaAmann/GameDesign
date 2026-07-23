@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Stats_Rook
   m_EditorClassIdentifier: Assembly-CSharp::SO_UnitStats
   maxHealth: 10
-  damage: 2
+  damage: 3
   detectionRadius: 10
-  xpReward: 2
-  isVictoryTarget: 1
+  xpReward: 3
+  isVictoryTarget: 0

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Tier_Elite
   m_EditorClassIdentifier: Assembly-CSharp::SO_Tier
   displayName: Elite
-  healthMultiplier: 1.5
-  damageMultiplier: 1.5
-  xpMultiplier: 1.5
+  healthMultiplier: 3
+  damageMultiplier: 3
+  xpMultiplier: 3
   tint: {r: 0.6020882, g: 0.2851221, b: 0.6549864, a: 1}

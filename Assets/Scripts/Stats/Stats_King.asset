@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0fae070e944369b49b837eae21e2018f, type: 3}
   m_Name: Stats_King
   m_EditorClassIdentifier: Assembly-CSharp::SO_UnitStats
-  maxHealth: 40
-  damage: 5
+  maxHealth: 60
+  damage: 10
   detectionRadius: 10
   xpReward: 20
   isVictoryTarget: 1

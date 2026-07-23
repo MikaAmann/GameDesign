@@ -104,6 +104,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bd4a2b5ab6914104494e7c4314f485f6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Chest
-  healthBonus: 3
-  damageBonus: 3
+  healthBonus: 2
+  damageBonus: 1
   openedSprite: {fileID: 21300040, guid: 29c9cded5e558164aaf8c9bf08aa1510, type: 3}

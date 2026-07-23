@@ -14,3 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SO_UnitStats
   maxHealth: 10
   damage: 2
+  detectionRadius: 10
+  xpReward: 3
+  isVictoryTarget: 0
